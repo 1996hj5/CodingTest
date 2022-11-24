@@ -7,7 +7,10 @@ const h2 = document.querySelector("h2");
 const list = document.querySelector("#ovr");
 const USERNAME_KEY = "username";
 
-const Myname = localStorage.getItem(USERNAME_KEY);
+
+let getUserItem = () => {
+    return localStorage.getItem(USERNAME_KEY) ?? loginInput.value;
+}
 
 class Character {
     constructor(name, hp, damage){
@@ -16,13 +19,14 @@ class Character {
         this.damage = damage
     }
 
-    // 아래서 올라온 attacked함수의 this는 몬스터. 
+    // 아래서 올라온 attacked함수의 this는 몬스터.
     attacked(damage){
         this.hp -= damage;
         console.log(`${this.name}의 체력이 ${this.hp} 남았습니다.`);
         // this.attack(target);
-                    if(this.hp <= 0) {
+        if(this.hp <= 0) {
             console.log(`${this.name}이 사망했습니다.`)
+            this.finish()
         } // else if(target.hp <= 0) {
         //     console.log(`${target.name}이 사망하셨습니다. F5를 눌러 다시 시작하세요.`)
         // }
@@ -33,16 +37,27 @@ class Character {
         //Character를 상속받는 인스턴스인 attacked 함수의 파라미터에 this.damage할당.
         target.attacked(this.damage);
         if (target.hp <= 0) {
-                        console.log(`전투에 승리하셨습니다.`);
-                      }
+            console.log(`전투에 승리하셨습니다.`);
+            this.finish()
+        }
     }
+
+    finish() {
+        characterSetting();
+    }
+
 }
 
-const user = new Character(Myname, 90, 15);
-const wizard = new Character("wizard", 70, 30);
-const warrior = new Character("warrior", 120, 7);
-const archer = new Character("archer", 100, 10);
+var user, wizard, warrior, archer, RandomMonster;
+characterSetting();
 const enemy = [wizard, warrior, archer];
+
+function characterSetting() {
+    user = new Character(getUserItem(), 90, 15);
+    wizard = new Character("wizard", 70, 30);
+    warrior = new Character("warrior", 120, 7);
+    archer = new Character("archer", 100, 10);
+}
 
 //로컬스토리지에 키 값 없을 경우
 function onsubmit(event){
@@ -53,14 +68,15 @@ function onsubmit(event){
     wellcome(loginInput.value);
 }
 //로컬스토리지에 키 값이 있거나 생성되었을 경우
-function wellcome(value){
+function wellcome(){
     //기존 변수를 사용하면 null. Myname을 읽지 못하는 이유 질문할 것!
-    const Mynamed = localStorage.getItem(USERNAME_KEY) ?? value;
+    let myname = getUserItem()
     div.classList.remove("hidden");
-    alert(`환영합니다 ${Mynamed}님. 화면의 버튼을 눌러 적을 생성하세요.`);
+    alert(`환영합니다 ${myname}님. 화면의 버튼을 눌러 적을 생성하세요.`);
 }
+
 //호이스팅 마친 후 여기부터 읽기 시작.
-if(Myname === null){
+if(!getUserItem()){
     loginForm.classList.remove("hidden");
     loginForm.addEventListener("submit", onsubmit);
 } else {
@@ -70,19 +86,19 @@ if(Myname === null){
 const att = document.querySelector("#attack");
 const run = document.querySelector("#run");
 
-function create(){
-    let RandomMonster = enemy[Math.floor(Math.random() * 3)];
+let create = () => {
+    RandomMonster = enemy[Math.floor(Math.random() * 3)];
     div.classList.add("hidden");
     h1.classList.remove("hidden");
     h2.classList.remove("hidden");
-    
+
     alert(`전방에 ${RandomMonster.name} 출현!`);
     console.log(user);
     console.log(RandomMonster);
 
     localStorage.setItem("enemy", JSON.stringify(RandomMonster));
 
-    
+
     list.classList.remove("hidden");
     list.innerText = `콘솔창을 열어 자세한 정보를 확인하세요.
     나의 정보 : ${JSON.stringify(user)}
@@ -92,13 +108,13 @@ function create(){
 
     // 공격을 눌렀을 시 아래의 함수 실행
     att.addEventListener("click", startBattle);
-    
-    
-    function startBattle(){
-        user.attack(RandomMonster);
-        if(RandomMonster.hp > 0){
-            RandomMonster.attack(user);
-        }
+
+}
+
+let startBattle = () => {
+    user.attack(RandomMonster);
+    if(RandomMonster.hp > 0){
+        RandomMonster.attack(user);
     }
 }
 
@@ -114,8 +130,14 @@ function runner(){
     list.classList.add("hidden");
     h1.classList.add("hidden");
     h2.classList.add("hidden");
-    
-    div.classList.remove("hidden"); 
+
+    div.classList.remove("hidden");
+    characterSetting();
+
+    // 도망칠 때, 이벤트를 지워놓고 가야합니다
+    // 만약 또 create에서 addEvent를 할 경우 2번의 이벤트가 발생하기 때문에
+    // 이벤트는 꼭 지워야 해요
+    att.removeEventListener("click", startBattle);
 }
 
 //----------------------------------------------------------------------------------------
